@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WaxChain">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>WaxChain Tracker</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b21; --panel:#22262e; --text:#f5f7fa;
+    --muted:#aeb6c2; --border:#343a45; --accent:#f5b942; --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--text);
+    padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:28px;margin:0 0 4px}
+  .sub{color:var(--muted);margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
+  .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .label{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.05em}
+  .name{font-size:26px;font-weight:700;margin-top:4px}
+  .pill{border:1px solid var(--border);border-radius:999px;padding:7px 10px;font-size:13px}
+  .big{font-size:46px;font-weight:800;line-height:1;margin-top:20px}
+  .unit{font-size:18px;color:var(--muted);font-weight:500}
+  .row{display:flex;justify-content:space-between;gap:12px;align-items:end}
+  .remain{font-size:14px;color:var(--muted);text-align:right}
+  .bar{height:12px;background:var(--panel);border-radius:999px;overflow:hidden;margin:12px 0 6px}
+  .fill{height:100%;background:var(--accent);width:0%;transition:.2s}
+  .scale{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+  input{
+    width:100%;font-size:18px;padding:14px;border-radius:12px;border:1px solid var(--border);
+    background:#11141a;color:var(--text);outline:none;margin-top:8px;
+  }
+  button{
+    width:100%;min-height:50px;border-radius:12px;border:0;font-size:16px;font-weight:700;
+    margin-top:10px;background:var(--accent);color:#111;
+  }
+  button.secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+  button.danger{background:transparent;color:#ffd2d2;border:1px solid #6c3c3c}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chain{padding:14px;border:1px solid var(--border);border-radius:14px;background:#14171c}
+  .chain.active{border-color:var(--accent)}
+  .chainhead{display:flex;justify-content:space-between;gap:8px}
+  .km{font-size:25px;font-weight:800;margin-top:8px}
+  .small{font-size:13px;color:var(--muted);margin-top:4px}
+  .msg{min-height:20px;color:var(--muted);font-size:14px;margin-top:8px}
+  .history{max-height:220px;overflow:auto}
+  .history div{padding:9px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .history div:last-child{border-bottom:0}
+  .note{font-size:13px;color:var(--muted);line-height:1.45}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WaxChain Tracker</h1>
+  <div class="sub">Two chain wax rotation with adjustable rewax interval</div>
+
+  <div class="card">
+    <div class="top">
+      <div><div class="label">CHAIN CURRENTLY FITTED</div><div class="name" id="activeName">Chain A</div></div>
+      <div class="pill" id="statusPill">Fresh wax</div>
+    </div>
+
+    <div class="row">
+      <div class="big"><span id="activeKm">0</span><span class="unit"> km</span></div>
+      <div class="remain"><strong id="remainingKm">450</strong> km until rewax</div>
+    </div>
+
+    <div class="bar"><div class="fill" id="progressBar"></div></div>
+    <div class="scale"><span>Fresh wax</span><span id="scaleLimit">450 km</span></div>
+
+    <label class="label" for="kmInput" style="display:block;margin-top:20px">ADD KILOMETRES RIDDEN</label>
+    <input id="kmInput" type="number" min="0.1" max="2000" step="0.1" inputmode="decimal" placeholder="e.g. 72">
+    <button id="addBtn">Add ride</button>
+    <div class="msg" id="msg"></div>
+
+    <div class="grid">
+      <button class="secondary" id="swapBtn">Swap to Chain B</button>
+      <button class="secondary" id="rewaxBtn">Rewax Chain A</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">REWAX INTERVAL</div>
+    <input id="limitInput" type="number" min="50" max="5000" step="10" inputmode="numeric" value="450">
+    <button id="saveLimitBtn">Save rewax interval</button>
+    <div class="small">This target applies to both chains and is saved on this device.</div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:10px">YOUR CHAINS</div>
+    <div class="grid">
+      <div class="chain active" id="chainA">
+        <div class="chainhead"><strong>Chain A</strong><span class="label" id="aFit">FITTED</span></div>
+        <div class="km"><span id="aKm">0</span> <span class="unit">km</span></div>
+        <div class="small" id="aStatus">450 km remaining</div>
+      </div>
+      <div class="chain" id="chainB">
+        <div class="chainhead"><strong>Chain B</strong><span class="label" id="bFit">SPARE</span></div>
+        <div class="km"><span id="bKm">0</span> <span class="unit">km</span></div>
+        <div class="small" id="bStatus">450 km remaining</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:8px">RECENT HISTORY</div>
+    <div class="history" id="history"></div>
+  </div>
+
+  <div class="card">
+    <div class="note" id="ruleNote"></div>
+    <button class="danger" id="resetAllBtn">Reset all data</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const KEY='waxchain-tracker-v3';
+  const defaults={active:'A',A:0,B:0,limit:450,history:[]};
+  let state;
+  try { state=JSON.parse(localStorage.getItem(KEY)) || defaults; } catch(e){ state={...defaults}; }
+  state={...defaults,...state,history:Array.isArray(state.history)?state.history:[]};
+
+  const $=id=>document.getElementById(id);
+  const fmt=n=>Number.isInteger(n)?String(n):n.toFixed(1);
+  const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+  const warningPoint=()=>Math.max(0,state.limit-50);
+  const status=km=> km>=state.limit?'REWAX DUE':km>=warningPoint()?'Rewax soon':km===0?'Fresh wax':'Good';
+  const remaining=km=>Math.max(0,state.limit-km);
+  const chainText=km=> km>=state.limit?'Rewax due now':fmt(remaining(km))+' km remaining';
+
+  function addHistory(text){
+    state.history.unshift({text,date:new Date().toLocaleString()});
+    state.history=state.history.slice(0,30);
+  }
+
+  function render(){
+    const a=state.active, other=a==='A'?'B':'A', km=Number(state[a])||0;
+    $('activeName').textContent='Chain '+a;
+    $('activeKm').textContent=fmt(km);
+    $('remainingKm').textContent=fmt(remaining(km));
+    $('statusPill').textContent=status(km);
+    $('progressBar').style.width=Math.min(100,km/state.limit*100)+'%';
+    $('scaleLimit').textContent=fmt(state.limit)+' km';
+    $('swapBtn').textContent='Swap to Chain '+other;
+    $('rewaxBtn').textContent='Rewax Chain '+a;
+    $('limitInput').value=state.limit;
+
+    $('aKm').textContent=fmt(state.A); $('bKm').textContent=fmt(state.B);
+    $('aStatus').textContent=chainText(state.A); $('bStatus').textContent=chainText(state.B);
+    $('aFit').textContent=a==='A'?'FITTED':'SPARE'; $('bFit').textContent=a==='B'?'FITTED':'SPARE';
+    $('chainA').classList.toggle('active',a==='A'); $('chainB').classList.toggle('active',a==='B');
+
+    $('history').innerHTML = state.history.length
+      ? state.history.map(h=>'<div><strong>'+h.text+'</strong><br><span class="small">'+h.date+'</span></div>').join('')
+      : '<div class="small">No rides logged yet.</div>';
+
+    $('ruleNote').textContent='Current rewax target: '+fmt(state.limit)+' km. The tracker shows “Rewax soon” for the final 50 km before the target and “REWAX DUE” once the target is reached.';
+    save();
+  }
+
+  $('addBtn').addEventListener('click',()=>{
+    const v=Number($('kmInput').value);
+    if(!Number.isFinite(v)||v<=0||v>2000){$('msg').textContent='Enter a distance between 0.1 and 2,000 km.';return;}
+    state[state.active]=Math.round((Number(state[state.active])+v)*10)/10;
+    addHistory(fmt(v)+' km added to Chain '+state.active);
+    $('kmInput').value='';
+    $('msg').textContent=fmt(v)+' km added to Chain '+state.active+'.';
+    render();
+  });
+
+  $('swapBtn').addEventListener('click',()=>{
+    state.active=state.active==='A'?'B':'A';
+    addHistory('Swapped to Chain '+state.active);
+    $('msg').textContent='Chain '+state.active+' is now fitted.';
+    render();
+  });
+
+  $('rewaxBtn').addEventListener('click',()=>{
+    const c=state.active;
+    state[c]=0;
+    addHistory('Chain '+c+' rewaxed and reset');
+    $('msg').textContent='Chain '+c+' reset to 0 km.';
+    render();
+  });
+
+  $('saveLimitBtn').addEventListener('click',()=>{
+    const v=Number($('limitInput').value);
+    if(!Number.isFinite(v)||v<50||v>5000){
+      $('msg').textContent='Enter a rewax interval between 50 and 5,000 km.';
+      return;
+    }
+    state.limit=Math.round(v*10)/10;
+    addHistory('Rewax interval changed to '+fmt(state.limit)+' km');
+    $('msg').textContent='Rewax interval saved at '+fmt(state.limit)+' km.';
+    render();
+  });
+
+  $('resetAllBtn').addEventListener('click',()=>{
+    if(confirm('Reset both chains, interval and ride history?')){
+      state={...defaults,history:[]};
+      $('msg').textContent='All data reset.';
+      render();
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
